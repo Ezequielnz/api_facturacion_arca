@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil{% endblock %}
+
+{% block content %}
+<h1>Perfil de Usuario</h1>
+<div class="profile-info">
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>CUIT:</strong> {{ user.cuit }}</p>
+    <p><strong>Empresa:</strong> {{ user.company_name }}</p>
+</div>
+<div style="margin-top: 20px;">
+    <a href="/logout"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
+    <a href="/"><button style="margin-left: 10px;">Inicio</button></a>
+</div>
+{% endblock %}

@@ -10,9 +10,11 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509 import load_pem_x509_certificate
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import pkcs7
 from zeep import Client
+from lxml import etree
+import glob
+import os
 
 CERT_PATH = "certificados/certificado.crt"
 KEY_PATH = "certificados/MiClavePrivada.key"
@@ -82,25 +84,35 @@ def enviar_a_wsaa(signed_data, unique_id):
         print(f"❌ Error en WSAA: {e}")
         return None
 
-# Ejecutar generación del TA
-generar_ticket_acceso()
-
-"""
 def verificar_ticket():
-    # Verifica si el Ticket de Acceso sigue siendo válido
+    """Verifica si existe un Ticket de Acceso válido"""
     try:
-        tree = etree.parse("loginTicketResponse.xml")
+        # Buscar el último archivo de respuesta generado
+        response_files = glob.glob("*-loginTicketResponse.xml")
+        if not response_files:
+            print("No se encontró ningún Ticket de Acceso. Generando uno nuevo...")
+            return generar_ticket_acceso()
+            
+        latest_file = max(response_files, key=os.path.getctime)
+        
+        # Parsear el XML
+        tree = etree.parse(latest_file)
         expiration_time = tree.find(".//expirationTime").text
         exp_time = datetime.datetime.fromisoformat(expiration_time)
+        
+        # Asegurarnos de que el datetime.now() también sea timezone-aware
+        now = datetime.datetime.now(exp_time.tzinfo)
 
-        if exp_time < datetime.datetime.now():
+        if exp_time < now:
             print("El Ticket de Acceso ha expirado. Creando uno nuevo...")
             return generar_ticket_acceso()
         else:
             print("El Ticket de Acceso sigue siendo válido.")
-            return True
+            with open(latest_file, "r", encoding="ascii") as f:
+                return f.read()
     except Exception as e:
         print(f"Error verificando el Ticket de Acceso: {e}")
-        return None
-"""
+        return generar_ticket_acceso()
 
+# Ejecutar verificación del TA antes de generar uno nuevo
+verificar_ticket()
