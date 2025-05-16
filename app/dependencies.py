@@ -1,21 +1,28 @@
 """
 Dependency functions for the FastAPI application.
 """
-from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Request, Security
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes, HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.templating import Jinja2Templates
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, Optional
+import datetime
 
 from app.models.database import SessionLocal, User
 from app.config.settings import SECRET_KEY, ALGORITHM
 
-# Templates setup
-templates = Jinja2Templates(directory="app/templates")
+# Define context processor to provide current year
+def current_year_processor(request: Request):
+    return {"current_year": datetime.datetime.now().year}
 
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Templates setup with context processor
+templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["current_year"] = datetime.datetime.now().year
+
+# OAuth2 scheme with auto error disabled to handle authentication from cookies too
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+http_bearer = HTTPBearer(auto_error=False)
 
 def get_db():
     """
@@ -30,32 +37,51 @@ def get_db():
     finally:
         db.close()
 
-def get_token_from_cookie(request: Request) -> str:
+async def get_token(
+    request: Request, 
+    token: Optional[str] = Depends(oauth2_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer)
+) -> Optional[str]:
     """
-    Extract the JWT token from cookies.
+    Extracts JWT token from various sources: OAuth2 header, HTTP Bearer, or cookies.
     
     Args:
         request: FastAPI request object
+        token: Token from OAuth2 header
+        credentials: Credentials from HTTP Bearer
         
     Returns:
-        Extracted token or empty string
+        Token string if found, None otherwise
     """
-    token = request.cookies.get("access_token", "")
-    if token.startswith("Bearer "):
-        return token.split(" ")[1]
-    return ""
+    # Try to get from OAuth2 header
+    if token:
+        return token
+    
+    # Try to get from HTTP bearer
+    if credentials:
+        return credentials.credentials
+    
+    # Try to get from cookies
+    cookie_token = request.cookies.get("access_token")
+    if cookie_token:
+        # Remove Bearer prefix if present
+        if cookie_token.startswith("Bearer "):
+            return cookie_token.replace("Bearer ", "")
+        return cookie_token
+    
+    return None
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)] = None,
-    request: Request = None,
+    request: Request,
+    token: Optional[str] = Depends(get_token),
     db: Session = Depends(get_db)
 ) -> User:
     """
     Get the current authenticated user.
     
     Args:
-        token: JWT token from Authorization header
-        request: FastAPI request object (for cookie authentication)
+        request: FastAPI request object
+        token: JWT token from various sources
         db: Database session
         
     Returns:
@@ -70,23 +96,32 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # Try to get token from cookie if not provided in header
-    if not token and request:
-        token = get_token_from_cookie(request)
-        
     if not token:
+        print("No token found")
         raise credentials_exception
-        
+    
     try:
+        # Decode and verify the token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
+            print("No email in token")
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Error: {str(e)}")
         raise credentials_exception
-        
+    
+    # Get the user from database
     user = db.query(User).filter(User.email == email).first()
     if user is None:
+        print(f"User not found: {email}")
         raise credentials_exception
-        
+    
+    if not user.is_active:
+        print(f"User inactive: {email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user"
+        )
+    
     return user 

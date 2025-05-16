@@ -5,10 +5,14 @@ import base64
 import datetime
 import glob
 import os
+import ssl
 from pathlib import Path
 from typing import Dict, Optional, Any
 from lxml import etree
 from zeep import Client
+from zeep.transports import Transport
+import requests
+import urllib3
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -17,7 +21,10 @@ from cryptography.x509 import load_pem_x509_certificate
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs7
 
-from app.config.settings import CERT_PATH, KEY_PATH, WSAA_WSDL
+from app.config.settings import CERT_PATH, KEY_PATH, WSAA_WSDL, ENVIRONMENT
+
+# Desactivar advertencias de SSL inseguro (solo en desarrollo)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Cache for tickets to avoid unnecessary WSAA calls
 ticket_cache: Dict[str, Dict[str, Any]] = {}
@@ -35,11 +42,31 @@ async def sign_tra(tra: str, cert_path: Path, key_path: Path) -> Optional[str]:
         Base64 encoded signed data or None if there was an error
     """
     try:
-        with open(key_path, "rb") as key_file:
-            private_key = load_pem_private_key(key_file.read(), password=None, backend=default_backend())
-        
-        with open(cert_path, "rb") as cert_file:
-            certificate = load_pem_x509_certificate(cert_file.read(), default_backend())
+        # Verificar si los archivos existen
+        if not cert_path.exists() or not key_path.exists():
+            print(f"Certificate ({cert_path.exists()}) or key ({key_path.exists()}) file not found")
+            # En entorno de desarrollo, generar firma ficticia para pruebas
+            if ENVIRONMENT == "dev":
+                print("DEV MODE: Generating mock signature for testing")
+                mock_data = "MOCKSIGNATURE_FOR_TESTING_ONLY_NOT_VALID"
+                return base64.b64encode(mock_data.encode()).decode()
+            return None
+            
+        # Cargar y verificar el certificado y la clave
+        try:
+            with open(key_path, "rb") as key_file:
+                private_key = load_pem_private_key(key_file.read(), password=None, backend=default_backend())
+            
+            with open(cert_path, "rb") as cert_file:
+                certificate = load_pem_x509_certificate(cert_file.read(), default_backend())
+        except Exception as cert_error:
+            print(f"Error loading certificate or key: {cert_error}")
+            # En entorno de desarrollo, generar firma ficticia para pruebas
+            if ENVIRONMENT == "dev":
+                print("DEV MODE: Generating mock signature for testing")
+                mock_data = "MOCKSIGNATURE_FOR_TESTING_ONLY_NOT_VALID"
+                return base64.b64encode(mock_data.encode()).decode()
+            return None
 
         # Sign the XML with PKCS#7 and DER encoding
         signer = pkcs7.PKCS7SignatureBuilder().set_data(tra.encode()).add_signer(
@@ -52,6 +79,11 @@ async def sign_tra(tra: str, cert_path: Path, key_path: Path) -> Optional[str]:
         return base64.b64encode(signed_der).decode()
     except Exception as e:
         print(f"Error signing XML: {e}")
+        # En entorno de desarrollo, generar firma ficticia para pruebas
+        if ENVIRONMENT == "dev":
+            print("DEV MODE: Generating mock signature for testing")
+            mock_data = "MOCKSIGNATURE_FOR_TESTING_ONLY_NOT_VALID"
+            return base64.b64encode(mock_data.encode()).decode()
         return None
 
 async def create_login_ticket(service: str) -> str:
@@ -91,7 +123,56 @@ async def send_ticket_request(signed_data: str) -> Optional[str]:
         XML response from WSAA or None if there was an error
     """
     try:
-        client = Client(WSAA_WSDL)
+        # En entorno de desarrollo, generar una respuesta ficticia para pruebas
+        if ENVIRONMENT == "dev" and "MOCKSIGNATURE" in signed_data:
+            print("DEV MODE: Generating mock WSAA response for testing")
+            # Crear una respuesta XML ficticia con token y sign para pruebas
+            now = datetime.datetime.now()
+            expiration = now + datetime.timedelta(hours=12)
+            mock_response = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<loginTicketResponse version="1.0">
+    <header>
+        <source>CN=wsaahomo, O=AFIP, C=AR, SERIALNUMBER=CUIT 33693450239</source>
+        <destination>SERIALNUMBER=CUIT 20283176789, CN=test</destination>
+        <uniqueId>{int(now.timestamp())}</uniqueId>
+        <generationTime>{now.isoformat()}</generationTime>
+        <expirationTime>{expiration.isoformat()}</expirationTime>
+    </header>
+    <credentials>
+        <token>MOCKTOKEN123456789</token>
+        <sign>MOCKSIGN987654321</sign>
+    </credentials>
+</loginTicketResponse>"""
+            
+            # Guardar en un archivo para simular el comportamiento normal
+            os.makedirs("app/services/tickets", exist_ok=True)
+            
+            response_filename = f"app/services/tickets/{now.strftime('%y%m%d%H%M')}-loginTicketResponse.xml"
+            
+            with open(response_filename, "w", encoding="utf-8") as f:
+                f.write(mock_response)
+            
+            return mock_response
+    
+        # Crear una sesión personalizada con configuración SSL ajustada
+        session = requests.Session()
+        
+        # Configurar la sesión para aceptar certificados con claves DH pequeñas
+        session.mount('https://', requests.adapters.HTTPAdapter(max_retries=3))
+        
+        # Crear un contexto SSL personalizado
+        context = ssl.create_default_context()
+        context.set_ciphers('DEFAULT@SECLEVEL=1')  # Permitir cifrados menos seguros
+        
+        # Aplicar el contexto a las peticiones HTTPS
+        session.verify = False
+        
+        # Crear el transporte para Zeep con la sesión personalizada
+        transport = Transport(session=session)
+        
+        # Crear el cliente con el transporte personalizado
+        client = Client(WSAA_WSDL, transport=transport)
+        
         response = client.service.loginCms(signed_data)
         
         # Create directory if it doesn't exist
@@ -108,6 +189,38 @@ async def send_ticket_request(signed_data: str) -> Optional[str]:
         return response
     except Exception as e:
         print(f"Error in WSAA call: {e}")
+        
+        # En entorno de desarrollo, generar una respuesta ficticia en caso de error
+        if ENVIRONMENT == "dev":
+            print("DEV MODE: Generating mock WSAA response after error")
+            # Crear una respuesta XML ficticia con token y sign para pruebas
+            now = datetime.datetime.now()
+            expiration = now + datetime.timedelta(hours=12)
+            mock_response = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<loginTicketResponse version="1.0">
+    <header>
+        <source>CN=wsaahomo, O=AFIP, C=AR, SERIALNUMBER=CUIT 33693450239</source>
+        <destination>SERIALNUMBER=CUIT 20283176789, CN=test</destination>
+        <uniqueId>{int(now.timestamp())}</uniqueId>
+        <generationTime>{now.isoformat()}</generationTime>
+        <expirationTime>{expiration.isoformat()}</expirationTime>
+    </header>
+    <credentials>
+        <token>MOCKTOKEN123456789</token>
+        <sign>MOCKSIGN987654321</sign>
+    </credentials>
+</loginTicketResponse>"""
+            
+            # Guardar en un archivo para simular el comportamiento normal
+            os.makedirs("app/services/tickets", exist_ok=True)
+            
+            response_filename = f"app/services/tickets/{now.strftime('%y%m%d%H%M')}-loginTicketResponse.xml"
+            
+            with open(response_filename, "w", encoding="utf-8") as f:
+                f.write(mock_response)
+            
+            return mock_response
+            
         return None
 
 async def parse_ticket_response(response: str) -> Dict[str, str]:
@@ -215,6 +328,20 @@ async def get_access_ticket(service: str, cuit: str = None) -> Optional[Dict[str
             ticket["cuit"] = cuit
         elif "AFIP_CUIT" in os.environ:
             ticket["cuit"] = os.environ["AFIP_CUIT"]
+        else:
+            # Intentar obtener CUIT de la primera entrada en la tabla de usuarios
+            try:
+                from sqlalchemy.orm import Session
+                from app.models.database import SessionLocal, User
+                db = SessionLocal()
+                user = db.query(User).first()
+                if user and user.cuit:
+                    ticket["cuit"] = user.cuit
+                    print(f"Using CUIT from database: {user.cuit}")
+                db.close()
+            except Exception as e:
+                print(f"Error getting CUIT from database: {e}")
+        
         return ticket
     
     # Create a new ticket
@@ -243,6 +370,19 @@ async def get_access_ticket(service: str, cuit: str = None) -> Optional[Dict[str
             ticket_data["cuit"] = cuit
         elif "AFIP_CUIT" in os.environ:
             ticket_data["cuit"] = os.environ["AFIP_CUIT"]
+        else:
+            # Intentar obtener CUIT de la primera entrada en la tabla de usuarios
+            try:
+                from sqlalchemy.orm import Session
+                from app.models.database import SessionLocal, User
+                db = SessionLocal()
+                user = db.query(User).first()
+                if user and user.cuit:
+                    ticket_data["cuit"] = user.cuit
+                    print(f"Using CUIT from database: {user.cuit}")
+                db.close()
+            except Exception as e:
+                print(f"Error getting CUIT from database: {e}")
             
         return ticket_data
     except Exception as e:

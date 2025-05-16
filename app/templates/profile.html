@@ -9,6 +9,12 @@
     <p><strong>CUIT:</strong> {{ user.cuit }}</p>
     <p><strong>Empresa:</strong> {{ user.company_name }}</p>
 </div>
+
+<div style="margin-top: 20px;">
+    <h2>Operaciones AFIP</h2>
+    <a href="/api/afip/invoice/create-form"><button style="background-color: #28a745;">Crear Factura Electrónica</button></a>
+</div>
+
 <div style="margin-top: 20px;">
     <a href="/logout"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
     <a href="/"><button style="margin-left: 10px;">Inicio</button></a>

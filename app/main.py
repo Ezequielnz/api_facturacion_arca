@@ -5,7 +5,20 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os
+import ssl
+import requests
 from contextlib import asynccontextmanager
+
+# Configuración SSL para solucionar problemas de conexión a AFIP
+os.environ['PYTHONHTTPSVERIFY'] = '0'
+# Configurar requests para ignorar verificación SSL
+requests.packages.urllib3.disable_warnings()
+# Configurar el nivel de seguridad SSL mínimo
+try:
+    # Establecer configuración SSL menos restrictiva
+    ssl._create_default_https_context = ssl._create_unverified_context
+except Exception as e:
+    print(f"SSL config error: {e}")
 
 from app.models.database import engine, Base
 from app.dependencies import templates

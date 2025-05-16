@@ -75,6 +75,7 @@ async def login(
     """
     Authenticate a user and return an access token.
     """
+    # Verificar credenciales
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
         raise HTTPException(
@@ -89,16 +90,24 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Generar token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
+    # Configurar redirección y cookie
     response = RedirectResponse(url="/profile", status_code=303)
     response.set_cookie(
         key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True
+        value=access_token,
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        samesite="lax"
     )
+    
+    print(f"Login exitoso para usuario: {user.email}")
     return response
 
 @router.get("/logout")
