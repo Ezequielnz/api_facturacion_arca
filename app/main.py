@@ -9,7 +9,7 @@ import ssl
 import requests
 from contextlib import asynccontextmanager
 
-# Configuración SSL para solucionar problemas de conexión a AFIP
+# Configuración SSL para solucionar problemas de conexión a ARCA
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 # Configurar requests para ignorar verificación SSL
 requests.packages.urllib3.disable_warnings()
@@ -27,7 +27,7 @@ from app.routes import auth, users, afip
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Create directory for AFIP tickets if it doesn't exist
+# Create directory for ARCA tickets if it doesn't exist
 os.makedirs("app/services/tickets", exist_ok=True)
 os.makedirs("app/services/certificados", exist_ok=True)
 
@@ -43,8 +43,8 @@ async def lifespan(app: FastAPI):
     print("Shutting down API...")
 
 app = FastAPI(
-    title="AFIP Web Services API",
-    description="API for interacting with AFIP Web Services",
+    title="ARCA Web Services API",
+    description="API for interacting with ARCA Web Services",
     version="0.1.0",
     lifespan=lifespan
 )

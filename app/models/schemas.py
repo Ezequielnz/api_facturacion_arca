@@ -1,5 +1,5 @@
 """
-Pydantic schemas for the AFIP API application.
+Pydantic schemas for the ARCA API application.
 """
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Dict, Any, Union
@@ -40,13 +40,13 @@ class TokenData(BaseModel):
 
 class AfipTicketRequest(BaseModel):
     """
-    Schema for requesting an AFIP access ticket.
+    Schema for requesting an ARCA access ticket.
     """
     service: str = Field(..., description="Service ID (e.g., wsfe)")
 
 class AfipTicketResponse(BaseModel):
     """
-    Schema for AFIP access ticket response.
+    Schema for ARCA access ticket response.
     """
     token: str
     sign: str

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <loginTicketResponse version="1.0">
     <header>
-        <source>CN=wsaa, O=AFIP, C=AR, SERIALNUMBER=CUIT 33693450239</source>
+        <source>CN=wsaa, O=ARCA, C=AR, SERIALNUMBER=CUIT 33693450239</source>
         <destination>SERIALNUMBER=CUIT 23283176789, CN=ezedev1</destination>
         <uniqueId>92030475</uniqueId>
         <generationTime>2025-05-06T20:24:37.661-03:00</generationTime>

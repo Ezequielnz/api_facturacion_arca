@@ -1,5 +1,5 @@
 """
-Service for handling AFIP authentication tickets (TA).
+Service for handling ARCA authentication tickets (TA).
 """
 import base64
 import datetime
@@ -88,7 +88,7 @@ async def sign_tra(tra: str, cert_path: Path, key_path: Path) -> Optional[str]:
 
 async def create_login_ticket(service: str) -> str:
     """
-    Create a login ticket request XML for AFIP.
+    Create a login ticket request XML for ARCA.
     
     Args:
         service: Service ID (e.g., 'wsfe')
@@ -132,7 +132,7 @@ async def send_ticket_request(signed_data: str) -> Optional[str]:
             mock_response = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <loginTicketResponse version="1.0">
     <header>
-        <source>CN=wsaahomo, O=AFIP, C=AR, SERIALNUMBER=CUIT 33693450239</source>
+        <source>CN=wsaahomo, O=ARCA, C=AR, SERIALNUMBER=CUIT 33693450239</source>
         <destination>SERIALNUMBER=CUIT 20283176789, CN=test</destination>
         <uniqueId>{int(now.timestamp())}</uniqueId>
         <generationTime>{now.isoformat()}</generationTime>
@@ -199,7 +199,7 @@ async def send_ticket_request(signed_data: str) -> Optional[str]:
             mock_response = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <loginTicketResponse version="1.0">
     <header>
-        <source>CN=wsaahomo, O=AFIP, C=AR, SERIALNUMBER=CUIT 33693450239</source>
+        <source>CN=wsaahomo, O=ARCA, C=AR, SERIALNUMBER=CUIT 33693450239</source>
         <destination>SERIALNUMBER=CUIT 20283176789, CN=test</destination>
         <uniqueId>{int(now.timestamp())}</uniqueId>
         <generationTime>{now.isoformat()}</generationTime>
@@ -310,7 +310,7 @@ async def check_ticket_validity(service: str) -> Optional[Dict[str, str]]:
 
 async def get_access_ticket(service: str, cuit: str = None) -> Optional[Dict[str, str]]:
     """
-    Get a valid access ticket for the specified AFIP service.
+    Get a valid access ticket for the specified ARCA service.
     If no valid ticket exists, create a new one.
     
     Args:
@@ -326,8 +326,8 @@ async def get_access_ticket(service: str, cuit: str = None) -> Optional[Dict[str
         # Add CUIT to ticket data
         if cuit:
             ticket["cuit"] = cuit
-        elif "AFIP_CUIT" in os.environ:
-            ticket["cuit"] = os.environ["AFIP_CUIT"]
+        elif "ARCA_CUIT" in os.environ:
+            ticket["cuit"] = os.environ["ARCA_CUIT"]
         else:
             # Intentar obtener CUIT de la primera entrada en la tabla de usuarios
             try:
@@ -368,8 +368,8 @@ async def get_access_ticket(service: str, cuit: str = None) -> Optional[Dict[str
         # Add CUIT to ticket data
         if cuit:
             ticket_data["cuit"] = cuit
-        elif "AFIP_CUIT" in os.environ:
-            ticket_data["cuit"] = os.environ["AFIP_CUIT"]
+        elif "ARCA_CUIT" in os.environ:
+            ticket_data["cuit"] = os.environ["ARCA_CUIT"]
         else:
             # Intentar obtener CUIT de la primera entrada en la tabla de usuarios
             try:

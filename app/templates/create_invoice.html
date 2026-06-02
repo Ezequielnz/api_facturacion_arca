@@ -82,8 +82,8 @@
 <h1>Crear Factura Electrónica</h1>
 
 <div id="certificate-info" class="alert alert-info">
-    <h3>Información sobre certificados AFIP</h3>
-    <p>Para utilizar esta funcionalidad, necesita tener los certificados de AFIP correctamente instalados:</p>
+    <h3>Información sobre certificados ARCA</h3>
+    <p>Para utilizar esta funcionalidad, necesita tener los certificados de ARCA correctamente instalados:</p>
     <ul>
         <li><strong>Certificado:</strong> <code>app/services/certificados/certificado.crt</code></li>
         <li><strong>Clave privada:</strong> <code>app/services/certificados/MiClavePrivada.key</code></li>
@@ -188,7 +188,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Función para formatear la fecha en formato YYYYMMDD
-    function formatDateForAFIP(dateString) {
+    function formatDateForARCA(dateString) {
         const date = new Date(dateString);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc_nro: parseInt(document.getElementById('doc_nro').value),
             
             // Formatear la fecha a YYYYMMDD
-            cbte_fecha: formatDateForAFIP(document.getElementById('fecha').value),
+            cbte_fecha: formatDateForARCA(document.getElementById('fecha').value),
             
             // Obtenemos el próximo número de comprobante automáticamente
             cbte_desde: 0, // Se calculará en el backend
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h4>Solución:</h4>
                     <ol>
                         <li>Verifique que los archivos de certificado existan en la ruta correcta</li>
-                        <li>Asegúrese de que los certificados sean válidos y estén emitidos por AFIP</li>
+                        <li>Asegúrese de que los certificados sean válidos y estén emitidos por ARCA</li>
                         <li>Recuerde que debe usar certificados de producción, no de homologación</li>
                     </ol>
                     `;

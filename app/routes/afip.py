@@ -1,5 +1,5 @@
 """
-AFIP Web Services endpoints.
+ARCA Web Services endpoints.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request
 from fastapi.responses import HTMLResponse
@@ -46,16 +46,16 @@ async def invoice_create_form(
         "user": current_user
     })
 
-@router.get("/status", summary="Check AFIP server status")
+@router.get("/status", summary="Check ARCA server status")
 async def check_status(
     service: str = "wsfe",
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, str]:
     """
-    Check the status of AFIP's servers.
+    Check the status of ARCA's servers.
     
     Args:
-        service: AFIP service to check (default: wsfe)
+        service: ARCA service to check (default: wsfe)
         
     Returns:
         Dictionary with status information for each server component
@@ -65,7 +65,7 @@ async def check_status(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -96,7 +96,7 @@ async def last_invoice_number(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -107,7 +107,7 @@ async def invoice_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available invoice types from AFIP.
+    Get all available invoice types from ARCA.
     
     Returns:
         Dictionary with invoice types information
@@ -117,7 +117,7 @@ async def invoice_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -128,7 +128,7 @@ async def concept_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available concept types from AFIP.
+    Get all available concept types from ARCA.
     
     Returns:
         Dictionary with concept types information
@@ -138,7 +138,7 @@ async def concept_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -149,7 +149,7 @@ async def document_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available document types from AFIP.
+    Get all available document types from ARCA.
     
     Returns:
         Dictionary with document types information
@@ -159,7 +159,7 @@ async def document_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -170,7 +170,7 @@ async def tax_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available tax types from AFIP.
+    Get all available tax types from ARCA.
     
     Returns:
         Dictionary with tax types information
@@ -180,7 +180,7 @@ async def tax_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -191,7 +191,7 @@ async def currency_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available currency types from AFIP.
+    Get all available currency types from ARCA.
     
     Returns:
         Dictionary with currency types information
@@ -201,7 +201,7 @@ async def currency_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.get(
@@ -212,7 +212,7 @@ async def optional_types(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get all available optional data types from AFIP.
+    Get all available optional data types from ARCA.
     
     Returns:
         Dictionary with optional data types information
@@ -222,7 +222,7 @@ async def optional_types(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.post(
@@ -234,13 +234,13 @@ async def create_electronic_invoice(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Create an electronic invoice through AFIP.
+    Create an electronic invoice through ARCA.
     
     Args:
         invoice_data: Dictionary containing invoice data
         
     Returns:
-        Dictionary with AFIP response including CAE
+        Dictionary with ARCA response including CAE
     """
     try:
         # Verificar certificados
@@ -367,7 +367,7 @@ async def create_electronic_invoice(
             invoice_data["imp_total"] = imp_neto + imp_iva + imp_tot_conc + imp_op_ex + imp_trib
             print(f"Calculated total amount: {invoice_data['imp_total']}")
         
-        # Invocar el servicio de AFIP para crear la factura
+        # Invocar el servicio de ARCA para crear la factura
         result = await create_invoice(invoice_data)
         
         # Extract CAE and related data
@@ -417,7 +417,7 @@ async def create_electronic_invoice(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
     except HTTPException as e:
         raise e
@@ -459,7 +459,7 @@ async def invoice_info(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
 
 @router.post(
@@ -477,7 +477,7 @@ async def generate_example_invoice(
         data: Dictionary containing minimal invoice data
         
     Returns:
-        Dictionary with AFIP response
+        Dictionary with ARCA response
     """
     try:
         # Validate the minimal required data
@@ -582,7 +582,7 @@ async def generate_example_invoice(
             invoice_data["fch_serv_hasta"] = service_end
             invoice_data["fch_vto_pago"] = payment_due
         
-        # Call AFIP to create the invoice
+        # Call ARCA to create the invoice
         result = await create_invoice(invoice_data)
         
         # Extract CAE and related data
@@ -637,7 +637,7 @@ async def generate_example_invoice(
     except AfipError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AFIP error: {str(e)}"
+            detail=f"ARCA error: {str(e)}"
         )
     except HTTPException as e:
         raise e
@@ -650,13 +650,13 @@ async def generate_example_invoice(
 
 @router.get(
     "/test-connection",
-    summary="Test connectivity to AFIP services"
+    summary="Test connectivity to ARCA services"
 )
 async def test_connection(
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Test connectivity to AFIP Web Services and check SSL configuration.
+    Test connectivity to ARCA Web Services and check SSL configuration.
     
     Returns:
         Dictionary with connectivity results
@@ -674,7 +674,7 @@ async def test_connection(
         "key_exists": key_exists
     }
     
-    # Test SSL connection to AFIP
+    # Test SSL connection to ARCA
     try:
         # Test direct HTTPS connection
         session = requests.Session()
@@ -708,7 +708,7 @@ async def test_connection(
     except Exception as e:
         results["direct_connection_error"] = str(e)
     
-    # Test AFIP WSDL parsing and server status
+    # Test ARCA WSDL parsing and server status
     try:
         afip_status = await get_server_status()
         results["afip_status"] = afip_status
@@ -743,4 +743,4 @@ async def test_connection(
     
     return results
 
-# Add more AFIP endpoints as needed 
+# Add more ARCA endpoints as needed 

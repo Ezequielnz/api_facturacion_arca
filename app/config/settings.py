@@ -1,5 +1,5 @@
 """
-Configuration settings for the AFIP API application.
+Configuration settings for the ARCA API application.
 """
 from pathlib import Path
 import os
@@ -12,7 +12,7 @@ SECRET_KEY = "your-secret-key-for-jwt"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# AFIP Settings
+# ARCA Settings
 CERT_PATH = Path("app/services/certificados/certificado.crt")
 KEY_PATH = Path("app/services/certificados/MiClavePrivada.key")
 WSAA_WSDL = "https://wsaa.afip.gov.ar/ws/services/LoginCms?WSDL"

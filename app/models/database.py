@@ -1,5 +1,5 @@
 """
-Database connection and model definitions for the AFIP API application.
+Database connection and model definitions for the ARCA API application.
 """
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base

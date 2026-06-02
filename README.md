@@ -1,15 +1,15 @@
-# AFIP Web Services API
+# ARCA Web Services API
 
-A Python FastAPI application designed to interact with AFIP (Administración Federal de Ingresos Públicos) Web Services in an easy, reusable way. This API provides a simple interface to AFIP's electronic invoice services and other AFIP web services.
+A Python FastAPI application designed to interact with ARCA (Administración Federal de Ingresos Públicos) Web Services in an easy, reusable way. This API provides a simple interface to ARCA's electronic invoice services and other ARCA web services.
 
 ## Features
 
-- Simplified interface to AFIP Web Services
+- Simplified interface to ARCA Web Services
 - Authentication and authorization system
 - Token management with automatic renewal
-- Certificate management for AFIP authentication
+- Certificate management for ARCA authentication
 - Electronic invoice generation and querying
-- Support for multiple AFIP services (WSFE, etc.)
+- Support for multiple ARCA services (WSFE, etc.)
 - Clean, scalable API structure
 
 ## Project Structure
@@ -20,8 +20,8 @@ app/
 ├── dependencies/       # Shared dependencies
 ├── models/             # Database models and schemas
 ├── routes/             # API endpoints
-├── services/           # Business logic and AFIP services
-│   ├── certificados/   # AFIP certificates
+├── services/           # Business logic and ARCA services
+│   ├── certificados/   # ARCA certificates
 │   └── tickets/        # Authentication tickets
 ├── static/             # Static assets (CSS, JS)
 └── templates/          # HTML templates
@@ -32,7 +32,7 @@ app/
 ### Prerequisites
 
 - Python 3.8+
-- AFIP certificates (for production use)
+- ARCA certificates (for production use)
 
 ### Installation
 
@@ -53,8 +53,8 @@ app/
    pip install -r requirements.txt
    ```
 
-4. Place your AFIP certificates in the `app/services/certificados/` directory:
-   - `certificado.crt`: Your AFIP certificate
+4. Place your ARCA certificates in the `app/services/certificados/` directory:
+   - `certificado.crt`: Your ARCA certificate
    - `MiClavePrivada.key`: Your private key
 
 5. Start the development server:
@@ -67,7 +67,7 @@ app/
 ## Environment Variables
 
 - `ENVIRONMENT`: Set to `dev` for testing mode or `prod` for production
-- `AFIP_CUIT`: Your CUIT number for AFIP authentication
+- `ARCA_CUIT`: Your CUIT number for ARCA authentication
 - `SECRET_KEY`: Secret key for JWT token generation (change in production)
 
 ## API Documentation
@@ -76,7 +76,7 @@ When the application is running, visit `/docs` for automatic Swagger documentati
 
 ### Main Endpoints
 
-- `/api/afip/status`: Check AFIP server status
+- `/api/afip/status`: Check ARCA server status
 - `/api/afip/invoice/types`: Get available invoice types
 - `/api/afip/invoice/last-number/{punto_venta}/{tipo_comprobante}`: Get last invoice number
 
@@ -85,14 +85,14 @@ When the application is running, visit `/docs` for automatic Swagger documentati
 To reuse this API in other projects:
 
 1. Clone the repository or install as a dependency
-2. Configure your AFIP certificates
+2. Configure your ARCA certificates
 3. Make API calls to the relevant endpoints
 
 Example using Python requests:
 ```python
 import requests
 
-# Get AFIP server status
+# Get ARCA server status
 response = requests.get("http://localhost:8000/api/afip/status", 
                        headers={"Authorization": f"Bearer {token}"})
 print(response.json())
@@ -100,7 +100,7 @@ print(response.json())
 
 ## Development
 
-### Adding New AFIP Services
+### Adding New ARCA Services
 
 1. Update `app/services/afip_client.py` with new service methods
 2. Add new routes in `app/routes/afip.py`
